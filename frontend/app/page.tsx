@@ -78,6 +78,55 @@ export default function Home() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // 在 Home 组件中添加 WebSocket 状态管理
+  const [wsConnection, setWsConnection] = useState<WebSocket | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (isAuthenticated && !wsConnection) {
+      const ws = new WebSocket('ws://localhost:3001');
+      
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        // 发送认证信息
+        ws.send(JSON.stringify({
+          type: 'auth',
+          userId: currentUser.phone // 使用用户手机号作为标识
+        }));
+      };
+  
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'auth_success') {
+          setSessionId(data.sessionId);
+          setWsConnection(ws);
+        } else if (data.sessionId !== sessionId) {
+          console.warn('Received message for different session');
+          return;
+        }
+  
+        // 处理其他消息类型...
+      };
+  
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setWsConnection(null);
+        setSessionId(null);
+      };
+  
+      ws.onclose = () => {
+        console.log('WebSocket closed');
+        setWsConnection(null);
+        setSessionId(null);
+      };
+  
+      return () => {
+        ws.close();
+      };
+    }
+  }, [isAuthenticated]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
