@@ -12,6 +12,7 @@
   "dependencies": {
     "express": "^5.1.0",
     "openai": "^5.7.0",
-    "ws": "^8.18.2"
+    "ws": "^8.18.2",
+    "tencentcloud-sdk-nodejs": "^4.0.0"
   }
 }

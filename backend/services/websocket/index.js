@@ -3,6 +3,8 @@ const http = require('http');
 const express = require('express');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
+const TencentASR = require('./services/TencentASR');
+const AudioProcessor = require('./services/AudioProcessor');
 
 const app = express();
 const server = http.createServer(app);
@@ -108,22 +110,23 @@ wss.on('connection', async (ws) => {
           throw new Error('无效的音频数据');
         }
 
-        // 先扣费，再处理业务
-        const consumeResponse = await axios.post('http://localhost:3003/api/credits/consume', {
-          userId: session.userId,
-          type: 'AUDIO',
-          amount: 1 // 根据实际业务定义计费单位
-        });
-        
-        if (!consumeResponse.data.success) {
-          throw new Error(consumeResponse.data.message || '扣费失败');
-        }
+        // 处理音频
+        const result = await audioProcessor.processAudio(
+          session.userId,
+          session.id,
+          message.audio
+        );
 
-        // 处理音频并记录统计
-        // ...
+        // 返回结果
+        ws.send(JSON.stringify({
+          type: 'transcription',
+          sessionId: session.id,
+          text: result.text,
+          requestId: result.requestId
+        }));
       }
     } catch (error) {
-      // 统一错误处理，不暴露系统错误
+      // 统一错误处理
       const errorMessage = error.response?.data?.message || error.message || '服务异常';
       console.error('处理消息错误:', error);
       ws.send(JSON.stringify({ 
@@ -135,4 +138,5 @@ wss.on('connection', async (ws) => {
   });
 });
 
-server.listen(3000, () => console.log('WebSocket service running on port 3000'));
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`WebSocket service running on port ${PORT}`));
