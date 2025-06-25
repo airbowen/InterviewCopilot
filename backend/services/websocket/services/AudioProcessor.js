@@ -1,8 +1,12 @@
 const axios = require('axios');
+const OpenAI = require('openai');
 
 class AudioProcessor {
   constructor(asrService) {
     this.asrService = asrService;
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
   }
 
   async processAudio(userId, sessionId, audioData) {
@@ -24,18 +28,51 @@ class AudioProcessor {
         throw new Error(recognitionResult.error);
       }
 
-      // 3. 记录统计
+      // 3. GPT 分析
+      const gptResponse = await this.analyzeWithGPT(recognitionResult.text);
+
+      // 4. 记录统计
       await this.recordStats(userId, sessionId);
 
       return {
         success: true,
         text: recognitionResult.text,
         requestId: recognitionResult.requestId,
+        analysis: gptResponse
       };
     } catch (error) {
-      // 4. 失败退费
+      // 5. 失败退费
       await this.refundCredits(userId).catch(console.error);
       throw error;
+    }
+  }
+
+  async analyzeWithGPT(text) {
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "你是一个面试辅导专家，请对候选人的回答进行分析，给出优点、改进建议和需要注意的问题。请从专业度、表达清晰度、逻辑结构等方面进行评估。"
+          },
+          {
+            role: "user",
+            content: text
+          }
+        ]
+      });
+
+      return {
+        feedback: completion.choices[0].message.content,
+        usage: completion.usage
+      };
+    } catch (error) {
+      console.error('GPT 分析失败:', error);
+      return {
+        feedback: '无法生成 AI 反馈',
+        error: error.message
+      };
     }
   }
 

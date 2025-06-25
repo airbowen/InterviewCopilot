@@ -7,18 +7,34 @@ import { Brain, TrendingUp, AlertTriangle, CheckCircle, Lightbulb } from 'lucide
 
 interface AIFeedbackPanelProps {
   isRecording: boolean;
+  feedback?: string;  // 添加 feedback 属性
 }
 
 interface Feedback {
   id: string;
-  type: 'positive' | 'suggestion' | 'warning';
+  type: 'positive' | 'suggestion' | 'warning' | 'analysis';  // 添加 'analysis' 类型
   title: string;
   message: string;
   timestamp: Date;
 }
 
-export default function AIFeedbackPanel({ isRecording }: AIFeedbackPanelProps) {
-  const [feedback, setFeedback] = useState<Feedback[]>([]);
+export default function AIFeedbackPanel({ isRecording, feedback }: AIFeedbackPanelProps) {
+  // 移除模拟数据生成的代码
+  const [feedbackItems, setFeedbackItems] = useState<Feedback[]>([]);
+
+  // 当收到新的 feedback 时更新显示
+  useEffect(() => {
+    if (feedback) {
+      const newFeedback: Feedback = {  // 显式添加类型注解
+        id: `feedback-${Date.now()}`,
+        type: 'analysis',
+        title: 'AI 分析反馈',
+        message: feedback,
+        timestamp: new Date()
+      };
+      setFeedbackItems(prev => [newFeedback, ...prev].slice(0, 8));
+    }
+  }, [feedback]);
   const [currentAnalysis, setCurrentAnalysis] = useState<string>('');
 
   // Simulate AI feedback generation
@@ -61,7 +77,7 @@ export default function AIFeedbackPanel({ isRecording }: AIFeedbackPanelProps) {
           ...sampleFeedback[index],
           timestamp: new Date()
         };
-        setFeedback(prev => [newFeedback, ...prev].slice(0, 8)); // Keep only latest 8
+        setFeedbackItems(prev => [newFeedback, ...prev].slice(0, 8)); // Keep only latest 8
         index++;
       }
     }, 6000 + Math.random() * 4000);
@@ -143,7 +159,7 @@ export default function AIFeedbackPanel({ isRecording }: AIFeedbackPanelProps) {
 
         {/* Feedback List */}
         <div className="space-y-3 max-h-80 overflow-y-auto">
-          {feedback.length === 0 ? (
+          {feedbackItems.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               {isRecording ? (
                 <div className="space-y-2">
@@ -158,7 +174,7 @@ export default function AIFeedbackPanel({ isRecording }: AIFeedbackPanelProps) {
               )}
             </div>
           ) : (
-            feedback.map((item) => (
+            feedbackItems.map((item) => (
               <div key={item.id} className="p-3 rounded-lg bg-white/60 border border-gray-100">
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 mt-0.5">

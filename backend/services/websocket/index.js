@@ -122,7 +122,8 @@ wss.on('connection', async (ws) => {
           type: 'transcription',
           sessionId: session.id,
           text: result.text,
-          requestId: result.requestId
+          requestId: result.requestId,
+          analysis: result.analysis
         }));
       }
     } catch (error) {
