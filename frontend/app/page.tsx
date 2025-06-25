@@ -25,6 +25,7 @@ import TranscriptionPanel from '@/components/TranscriptionPanel';
 import AIFeedbackPanel from '@/components/AIFeedbackPanel';
 import PerformanceMetrics from '@/components/PerformanceMetrics';
 import AudioVisualization from '@/components/AudioVisualization';
+import ScreenshotButton from '@/components/ScreenshotButton';
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -191,6 +192,7 @@ export default function Home() {
                 </div>
 
                 {/* Recording Controls */}
+          
                 <div className="flex justify-center space-x-4">
                   {!isRecording ? (
                     <Button 
@@ -202,15 +204,18 @@ export default function Home() {
                       Start Recording
                     </Button>
                   ) : (
-                    <Button 
-                      onClick={handleStopRecording}
-                      variant="destructive"
-                      size="lg"
-                      className="px-8 py-4 text-lg shadow-lg"
-                    >
-                      <MicOff className="h-6 w-6 mr-3" />
-                      Stop Recording
-                    </Button>
+                    <>
+                      <Button 
+                        onClick={handleStopRecording}
+                        variant="destructive"
+                        size="lg"
+                        className="px-8 py-4 text-lg shadow-lg"
+                      >
+                        <MicOff className="h-6 w-6 mr-3" />
+                        Stop Recording
+                      </Button>
+                      <ScreenshotButton wsConnection={wsConnection} sessionId={sessionId} />
+                    </>
                   )}
                 </div>
 

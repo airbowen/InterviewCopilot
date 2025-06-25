@@ -5,6 +5,7 @@ const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const TencentASR = require('./services/TencentASR');
 const AudioProcessor = require('./services/AudioProcessor');
+const { Configuration, OpenAIApi } = require('openai');
 
 const app = express();
 const server = http.createServer(app);
@@ -141,3 +142,43 @@ wss.on('connection', async (ws) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`WebSocket service running on port ${PORT}`));
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
+// 在WebSocket消息处理中添加
+// 在WebSocket消息处理中修改OpenAI调用部分
+if (data.type === 'screenshot') {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-vision-preview",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { 
+              type: "text", 
+              text: "请分析这段代码截图：\n1. 代码的主要功能是什么？\n2. 代码质量如何，是否符合最佳实践？\n3. 有哪些可以改进的地方？\n4. 是否存在潜在的性能问题或bug？\n5. 如果是面试场景，这段代码展示了候选人哪些技术能力？" 
+            },
+            {
+              type: "image_url",
+              image_url: data.imageData
+            }
+          ],
+        }
+      ],
+      max_tokens: 1000,
+    });
+    
+    // 将AI分析结果返回给客户端
+    ws.send(JSON.stringify({
+      type: 'screenshot_analysis',
+      sessionId: data.sessionId,
+      analysis: response.choices[0].message.content
+    }));
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+  }
+}
